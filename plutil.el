@@ -118,7 +118,7 @@ KEY        <key>[.(index|key)...]
   "Return a plist XML representation of ALIST.
 If NOWRAP not nil, inhibit root wrapper <dict></dict>."
   (let ((key (caar alist))
-        (val (cadar alist))
+        (val (car (cdar alist)))
         (rest (cdr alist)))
     (concat (unless nowrap "<dict>")
             (format "<key>%s</key>" key)
