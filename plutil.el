@@ -171,13 +171,21 @@ Return no-nil if success."
   "Delete KEY/value pair from FILE."
   (plutil--execute file 'remove key))
 
-(defun plutil-read (file &optional fmt key)
+(defun plutil-read (file &optional key fmt)
   "Read value from FILE by KEY.
-FMT specific ouput format, it can be 'json or 'xml1.
-If KEY nil, return all."
+If KEY nil, return all.
+FMT specific ouput format, it can be 'json(default) or 'xml1.
+
+:FIXME
+Because the XML1 format carries additional header information,
+JSON is used as the default format here to get a more readable output,
+but sometimes it will return an error, E.g:
+
+    $ plutil -convert json -o - ~/Library/Preferences/com.github.GitHub.plist
+    /Users/$USER/Library/Preferences/com.github.GitHub.plist: invalid object in plist for destination format"
   (if key
-      (plutil--execute file 'extract key fmt)
-    (plutil--execute file 'convert nil fmt)))
+      (plutil--execute file 'extract key (or fmt 'json))
+    (plutil--execute file 'convert nil (or fmt 'json))))
 
 (provide 'plutil)
 

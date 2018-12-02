@@ -214,7 +214,7 @@ If ALISTP not nil, treat JSON as an alist."
              <integer>2</integer>
              <integer>3</integer>
            </array>")))
-    (should (equal "[1,2,3]" (plutil-read test-file 'json "array0")))))
+    (should (equal "[1,2,3]" (plutil-read test-file "array0" 'json)))))
 
 (ert-deftest test-plutil-read-nested-array ()
   (let ((test-file
@@ -227,7 +227,7 @@ If ALISTP not nil, treat JSON as an alist."
                <integer>3</integer>
              </array>
            </array>")))
-    (should (equal "[2,3]" (plutil-read test-file 'json "array0.1")))))
+    (should (equal "[2,3]" (plutil-read test-file "array0.1" 'json)))))
 
 (ert-deftest test-plutil-read-dict ()
   (let ((test-file
@@ -238,7 +238,7 @@ If ALISTP not nil, treat JSON as an alist."
              <key>bar</key><integer>2</integer>
              <key>qux</key><integer>3</integer>
            </dict>")))
-    (should (equal "{\"foo\":1,\"bar\":2,\"qux\":3}" (-sort-json-dict (plutil-read test-file 'json "dict0"))))))
+    (should (equal "{\"foo\":1,\"bar\":2,\"qux\":3}" (-sort-json-dict (plutil-read test-file "dict0" 'json))))))
 
 (ert-deftest test-plutil-read-nested-dict ()
   (let ((test-file
@@ -252,19 +252,19 @@ If ALISTP not nil, treat JSON as an alist."
              </dict>
            </dict>
 ")))
-    (should (equal "{\"bar\":2,\"qux\":3}" (-sort-json-dict (plutil-read test-file 'json "dict0.foo"))))))
+    (should (equal "{\"bar\":2,\"qux\":3}" (-sort-json-dict (plutil-read test-file "dict0.foo" 'json))))))
 
 (ert-deftest test-plutil-insert-array ()
   (let ((test-file (-create-testfile))
         (test-data (plutil-xml-encode '(:array (1 2 3)))))
     (should (plutil-insert test-file "array1" 'xml test-data))
-    (should (equal "[1,2,3]" (plutil-read test-file 'json "array1")))))
+    (should (equal "[1,2,3]" (plutil-read test-file "array1" 'json)))))
 
 (ert-deftest test-plutil-insert-dict ()
   (let ((test-file (-create-testfile))
         (test-data (plutil-xml-encode '(:dict ((foo 1) (bar 2) (qux 3))))))
     (should (plutil-insert test-file "dict1" 'xml test-data))
-    (should (equal "{\"foo\":1,\"bar\":2,\"qux\":3}" (-sort-json-dict (plutil-read test-file 'json "dict1"))))))
+    (should (equal "{\"foo\":1,\"bar\":2,\"qux\":3}" (-sort-json-dict (plutil-read test-file "dict1" 'json))))))
 
 (ert-deftest test-plutil-replace-array ()
   (let ((test-file
@@ -276,7 +276,7 @@ If ALISTP not nil, treat JSON as an alist."
              <integer>3</integer>
            </array>")))
     (should (plutil-update test-file "array0" 'xml (plutil-xml-encode '(:array (11 22 33)))))
-    (should (equal "[11,22,33]" (plutil-read test-file 'json "array0")))))
+    (should (equal "[11,22,33]" (plutil-read test-file "array0" 'json)))))
 
 (ert-deftest test-plutil-replace-dict ()
   (let ((test-file
@@ -288,7 +288,7 @@ If ALISTP not nil, treat JSON as an alist."
              <key>qux</key><integer>3</integer>
            </dict>")))
     (should (plutil-update test-file "dict0" 'xml (plutil-xml-encode '(:dict ((foo 11) (bar 22) (qux 33))))))
-    (should (equal "{\"foo\":11,\"bar\":22,\"qux\":33}" (-sort-json-dict (plutil-read test-file 'json "dict0"))))))
+    (should (equal "{\"foo\":11,\"bar\":22,\"qux\":33}" (-sort-json-dict (plutil-read test-file "dict0" 'json))))))
 
 (ert-deftest test-plutil-delete-array ()
   (let ((test-file
@@ -306,7 +306,7 @@ If ALISTP not nil, treat JSON as an alist."
              <key>qux</key><integer>3</integer>
            </dict>")))
     (should (plutil-delete test-file "array0"))
-    (let* ((json (json-read-from-string (plutil-read test-file 'json)))
+    (let* ((json (json-read-from-string (plutil-read test-file nil 'json)))
            (sorted-string (concat (format "{\"%s\":" (caar json)) (-sort-json-dict (cdar json) t) "}")))
       (should (equal "{\"dict0\":{\"foo\":1,\"bar\":2,\"qux\":3}}" sorted-string)))))
 
@@ -326,6 +326,6 @@ If ALISTP not nil, treat JSON as an alist."
              <key>qux</key><integer>3</integer>
            </dict>")))
     (should (plutil-delete test-file "dict0"))
-    (should (equal "{\"array0\":[1,2,3]}" (plutil-read test-file 'json)))))
+    (should (equal "{\"array0\":[1,2,3]}" (plutil-read test-file nil 'json)))))
 
 ;; test-plutil.el ends here
