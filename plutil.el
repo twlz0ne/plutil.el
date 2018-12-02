@@ -25,6 +25,7 @@
 ;;; Commentary:
 
 ;; Some utility functions to help read/write Apple plist file.
+;; See more at README.md
 
 ;;; Change Log:
 
