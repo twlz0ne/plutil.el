@@ -112,6 +112,12 @@ KEY        <key>[.(index|key)...]
                  ((elt (reverse (append timev nil)) 0)
                   (format "<date>%s</date>" val))
                  (t (signal 'error (list (format "[plutil] Expected an ISO 8601 formatted string bug got '%s'" val)))))))
+             ((eq head :data)
+              (condition-case err
+                  (progn
+                    (base64-decode-string val)
+                    (format "<data>%s</data>" val))
+                (error (signal 'error (list (format "[plutil] Expected a base64 string but got '%s'" val))))))
              (t (let ((key (substring (symbol-name head) 1)))
                   (format "<%s>%s</%s>" key val key)))
              )))

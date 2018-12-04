@@ -87,6 +87,18 @@ If ALISTP not nil, treat JSON as an alist."
         (plutil-xml-encode '(:date "2018-11-28T"))
       (error (cadr err))))))
 
+(ert-deftest test-plutil-xml-encode-data-value ()
+  (should
+   (equal
+    "<data>Zm9vYmFy</data>"
+    (plutil-xml-encode '(:data "Zm9vYmFy"))))
+  (should
+   (equal
+    "[plutil] Expected a base64 string but got 'foobar'"
+    (condition-case err
+        (plutil-xml-encode '(:data "foobar"))
+      (error (cadr err))))))
+
 ;; array
 
 (ert-deftest test-plutil-xml-encode-array-nested-0 ()
