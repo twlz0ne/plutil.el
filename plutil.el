@@ -103,9 +103,11 @@ KEY        <key>[.(index|key)...]
               (concat "<dict>" (plutil-xml-encode-dict (car rest) t) "</dict>"))
              ((eq head :bool)
               (cond
-               ((member val '("yes" "no" "true" "false"))
-                (format "<%s/>" val))
-               (t (signal (format "[plutil] Unknown bool value '%s'" val)))))
+               ((member (downcase val) '("yes" "true"))
+                (format "<true/>"))
+               ((member (downcase val) '("no" "false"))
+                (format "<false/>"))
+               (t (signal 'error (list (format "[plutil] Invalid bool value '%s'" val))))))
              ((eq head :date)
               (let ((timev (timezone-parse-date val)))
                 (cond

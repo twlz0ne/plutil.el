@@ -63,10 +63,24 @@ If ALISTP not nil, treat JSON as an alist."
     (plutil-xml-encode "foo"))))
 
 (ert-deftest test-plutil-xml-encode-bool-value ()
+  (should (equal "<true/>" (plutil-xml-encode '(:bool "true"))))
+  (should (equal "<true/>" (plutil-xml-encode '(:bool "True"))))
+  (should (equal "<true/>" (plutil-xml-encode '(:bool "TRUE"))))
+  (should (equal "<true/>" (plutil-xml-encode '(:bool "yes"))))
+  (should (equal "<true/>" (plutil-xml-encode '(:bool "Yes"))))
+  (should (equal "<true/>" (plutil-xml-encode '(:bool "YES"))))
+  (should (equal "<false/>" (plutil-xml-encode '(:bool "false"))))
+  (should (equal "<false/>" (plutil-xml-encode '(:bool "False"))))
+  (should (equal "<false/>" (plutil-xml-encode '(:bool "FALSE"))))
+  (should (equal "<false/>" (plutil-xml-encode '(:bool "no"))))
+  (should (equal "<false/>" (plutil-xml-encode '(:bool "No"))))
+  (should (equal "<false/>" (plutil-xml-encode '(:bool "NO"))))
   (should
    (equal
-    "<true/>"
-    (plutil-xml-encode '(:bool "true")))))
+    "[plutil] Invalid bool value 'OK'"
+    (condition-case err
+        (plutil-xml-encode '(:bool "OK"))
+      (error (cadr err))))))
 
 (ert-deftest test-plutil-xml-encode-date-value ()
   (should
@@ -201,7 +215,7 @@ If ALISTP not nil, treat JSON as an alist."
           <key>qux</key>
           <integer>3</integer>
           <key>outdated</key>
-          <yes/>
+          <true/>
         </dict>
       </array>")
     (plutil-xml-encode
