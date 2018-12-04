@@ -68,11 +68,24 @@ If ALISTP not nil, treat JSON as an alist."
     "<true/>"
     (plutil-xml-encode '(:bool "true")))))
 
-(ert-deftest test-plutil-xml-encode-custom-value ()
+(ert-deftest test-plutil-xml-encode-date-value ()
   (should
    (equal
     "<date>2018-11-28T06:42:23Z</date>"
-    (plutil-xml-encode '(:date "2018-11-28T06:42:23Z")))))
+    (plutil-xml-encode '(:date "2018-11-28T06:42:23Z"))))
+  (should
+   (equal
+    "<date>2018-11-28T06:42Z</date>"
+    (plutil-xml-encode '(:date "2018-11-28T06:42Z"))))
+  (should (equal
+    "<date>2018-11-28T06Z</date>"
+    (plutil-xml-encode '(:date "2018-11-28T06Z"))))
+  (should
+   (equal
+    "[plutil] Expected an ISO 8601 formatted string bug got '2018-11-28T'"
+    (condition-case err
+        (plutil-xml-encode '(:date "2018-11-28T"))
+      (error (cadr err))))))
 
 ;; array
 

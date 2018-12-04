@@ -34,6 +34,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'timezone)
 
 ;;; internal
 
@@ -94,21 +95,26 @@ KEY        <key>[.(index|key)...]
             (rest (cdr obj)))
         (cond
          ((keywordp head)
-          (cond
-           ((eq head :array)
-            (concat "<array>" (plutil-xml-encode-array (car rest) t) "</array>"))
-           ((eq head :dict)
-            (concat "<dict>" (plutil-xml-encode-dict (car rest) t) "</dict>"))
-           ((eq head :bool)
-            (let ((value (car rest)))
+          (let ((val (car rest)))
+            (cond
+             ((eq head :array)
+              (concat "<array>" (plutil-xml-encode-array (car rest) t) "</array>"))
+             ((eq head :dict)
+              (concat "<dict>" (plutil-xml-encode-dict (car rest) t) "</dict>"))
+             ((eq head :bool)
               (cond
-               ((member value '("yes" "no" "true" "false"))
-                (format "<%s/>" value))
-               (t (signal (format "[plutil] Unknown bool value '%s'" value))))))
-           (t (let ((key (substring (symbol-name head) 1))
-                    (val (car rest)))
-                (format "<%s>%s</%s>" key val key)))
-           ))
+               ((member val '("yes" "no" "true" "false"))
+                (format "<%s/>" val))
+               (t (signal (format "[plutil] Unknown bool value '%s'" val)))))
+             ((eq head :date)
+              (let ((timev (timezone-parse-date val)))
+                (cond
+                 ((elt (reverse (append timev nil)) 0)
+                  (format "<date>%s</date>" val))
+                 (t (signal 'error (list (format "[plutil] Expected an ISO 8601 formatted string bug got '%s'" val)))))))
+             (t (let ((key (substring (symbol-name head) 1)))
+                  (format "<%s>%s</%s>" key val key)))
+             )))
          (t (plutil-xml-encode head)
             (plutil-xml-encode rest)))))
      (t (cond ((stringp obj) (format "<string>%s</string>" obj))
