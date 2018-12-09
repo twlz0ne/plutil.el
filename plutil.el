@@ -165,7 +165,7 @@ Data nodes at `(nth 3 xml1obj)'."
       (unless (or noheader
                   (and (eq (nth 0 xml1obj) 'plist)
                        (equal (nth 1 xml1obj) '((version . "1.0")))
-                       (string= (nth 2 xml1obj) "\n")))
+                       (string-match-p "\\`[\n\s\t]*\\'" (nth 2 xml1obj))))
         (signal 'error (list (format "[plutil] Invalid plist xml1 string: %s" xml1str))))
       xml1obj)))
 
