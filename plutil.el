@@ -196,7 +196,7 @@ Data nodes at `(nth 3 xml1obj)'."
     (let ((head (car xml1nodes))
           (rest (cdr xml1nodes)))
       (cond ((memq head '(true false)) (list (intern ":bool") (format "%s" head)))
-            ((eq head 'real) (list (intern ":float") (cadr rest)))
+            ((eq head 'real) (list (intern ":float") (string-to-number (cadr rest))))
             ((eq head 'data) (list (intern ":data") (cadr rest)))
             ((eq head 'date) (list (intern ":date") (cadr rest)))
             ((eq head 'integer) (string-to-number (cadr rest)))
