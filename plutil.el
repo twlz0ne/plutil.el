@@ -153,6 +153,101 @@ If NOWRAP not nil, inhibit root wrapper <array></array>."
               (plutil-xml-encode-array rest t))
             (unless nowrap "</array>"))))
 
+;;; decode
+
+(defun plutil--xml1-parse (xml1str &optional noheader)
+  "Parse XML1STR.
+If NOHEADER no nil, skip header checking,
+Data nodes at `(nth 3 xml1obj)'."
+  (with-temp-buffer
+    (insert xml1str)
+    (let ((xml1obj (car (xml-parse-region (point-min) (point-max)))))
+      (unless (or noheader
+                  (and (eq (nth 0 xml1obj) 'plist)
+                       (equal (nth 1 xml1obj) '((version . "1.0")))
+                       (string= (nth 2 xml1obj) "\n")))
+        (signal 'error (list (format "[plutil] Invalid plist xml1 string: %s" xml1str))))
+      xml1obj)))
+
+(defun plutil--xml1-purge (xml1nodes)
+  "Convert XML1NODES to string, remove nil or blanks."
+  (let ((root (car xml1nodes))
+        (rest (cdr xml1nodes)))
+    (cond ((or (eq root 'true)
+               (eq root 'false))
+           (format "<%s/>" root))
+          (t
+           (concat
+            (format "<%s>" root)
+            (mapconcat
+             'identity
+             (mapcar (lambda (node)
+                       (cond ((and (listp node) (not (eq node nil)))
+                              (plutil--xml1-purge node))
+                             ((or (not node) (string-match-p "\\`[\n\s\t]*\\'" node)) nil)
+                             (t (format "%s" node))))
+                     rest)
+             "")
+            (format "</%s>" root))))))
+
+(defun plutil--xml1-decode (xml1nodes)
+  "Decode XML1NODES, return a list."
+  (when (and (listp xml1nodes) xml1nodes)
+    (let ((head (car xml1nodes))
+          (rest (cdr xml1nodes)))
+      (cond ((memq head '(true false)) (list (intern ":bool") (format "%s" head)))
+            ((eq head 'real) (list (intern ":float") (cadr rest)))
+            ((eq head 'data) (list (intern ":data") (cadr rest)))
+            ((eq head 'date) (list (intern ":date") (cadr rest)))
+            ((eq head 'integer) (string-to-number (cadr rest)))
+            ((eq head 'string) (cadr rest))
+            ((eq head 'key) (cadr rest))
+            ((eq head 'array)
+             (list :array
+                   (let ((array '()))
+                     (while rest
+                       (let ((elm (car rest)))
+                         (setq rest (cdr rest))
+                         (when (and elm (listp elm))
+                           (setq array (append array (list (plutil--xml1-decode elm)))))))
+                     array)))
+            ((eq head 'dict)
+             (list :dict
+                   (let ((dict '()))
+                     (while rest
+                       (let ((keynode nil)
+                             (valnode nil))
+                         (while (and rest (not (consp keynode)))
+                           (setq keynode (car rest))
+                           (setq rest (cdr rest)))
+                         (while (and rest (not (consp valnode)))
+                           (setq valnode (car rest))
+                           (setq rest (cdr rest)))
+                         (when (and (consp keynode) (consp valnode))
+                           (setq dict
+                                 (append
+                                  dict
+                                  (list
+                                   (list
+                                    (plutil--xml1-decode keynode)
+                                    (plutil--xml1-decode valnode))))))))
+                     dict)))
+            (t (signal 'error (list (format "[plutil] Invalid plist xml1 nodes: %s" rest))))))))
+
+(defun plutil-xml1-purge (xml1str &optional noheader)
+  "Purge XML1STR, remove header and blanks."
+  (plutil--xml1-purge
+   (if noheader
+       (plutil--xml1-parse xml1str t)
+     (nth 3 (plutil--xml1-parse xml1str)))))
+
+(defun plutil-xml1-decode (xml1str &optional noheader)
+  "Convert XML1STR to list."
+  (plutil--xml1-decode
+   (if noheader
+       (plutil--xml1-parse xml1str t)
+     (nth 3 (plutil--xml1-parse xml1str)))))
+
 ;;; read & write
 
 (defun plutil-create (file &optional init-data)
