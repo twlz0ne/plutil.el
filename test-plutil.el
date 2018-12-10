@@ -227,6 +227,139 @@ If ALISTP not nil, treat JSON as an alist."
          (("qux" 3)
           ("outdated" (:bool "yes"))) )))))))
 
+;;; decode
+
+(ert-deftest test-plutil-xml1-purge ()
+  (should
+   (equal
+    (-xml-ugly
+     "<array>
+        <string>foo</string>
+        <string>bar</string>
+        <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
+        <dict>
+          <key>qux</key>
+          <integer>3</integer>
+          <key>outdated</key>
+          <true/>
+        </dict>
+      </array>")
+    (plutil-xml1-purge
+     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+      <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+      <plist version=\"1.0\">
+      <array>
+        <string>foo</string>
+        <string>bar</string>
+        <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
+        <dict>
+          <key>qux</key>
+          <integer>3</integer>
+          <key>outdated</key>
+          <true/>
+        </dict>
+      </array>
+      </plist>"))))
+
+(ert-deftest test-plutil-xml1-purge-noheader ()
+  (should
+   (equal
+    (-xml-ugly
+     "<array>
+        <string>foo</string>
+        <string>bar</string>
+        <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
+        <dict>
+          <key>qux</key>
+          <integer>3</integer>
+          <key>outdated</key>
+          <true/>
+        </dict>
+      </array>")
+    (plutil-xml1-purge
+     "<array>
+        <string>foo</string>
+        <string>bar</string>
+        <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
+        <dict>
+          <key>qux</key>
+          <integer>3</integer>
+          <key>outdated</key>
+          <true/>
+        </dict>
+      </array>
+      </plist>"
+     t))))
+
+(ert-deftest test-plutil-xml1-decode ()
+  (should
+   (equal
+    '(:array
+      ("foo"
+       "bar"
+       (:date "2018-11-28T06:42:23Z")
+       (:data "Zm9vYmFy")
+       (:float 1.23)
+       (:dict
+        (("qux" 3)
+         ("outdated" (:bool "true"))))))
+    (plutil-xml1-decode
+     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+      <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+      <plist version=\"1.0\">
+      <array>
+        <string>foo</string>
+        <string>bar</string>
+        <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
+        <dict>
+          <key>qux</key>
+          <integer>3</integer>
+          <key>outdated</key>
+          <true/>
+        </dict>
+      </array>
+      </plist>")
+    )))
+
+(ert-deftest test-plutil-xml1-decode-noheader ()
+  (should
+   (equal
+    '(:array
+      ("foo"
+       "bar"
+       (:date "2018-11-28T06:42:23Z")
+       (:data "Zm9vYmFy")
+       (:float 1.23)
+       (:dict
+        (("qux" 3)
+         ("outdated" (:bool "true"))))))
+    (plutil-xml1-decode
+     "<array>
+        <string>foo</string>
+        <string>bar</string>
+        <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
+        <dict>
+          <key>qux</key>
+          <integer>3</integer>
+          <key>outdated</key>
+          <true/>
+        </dict>
+      </array>
+      </plist>"
+     t))))
+
 ;;; read & write
 
 (ert-deftest test-plutil-create ()
