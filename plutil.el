@@ -68,21 +68,28 @@ KEY        <key>[.(index|key)...]
     (unless (and (and readp (memq type '(json xml1)))
                  (and (not readp) (memq type '(bool integer float string data date xml json)))
               (signal (format "[plutil] Unknown type '%s'!" type))))
-    (shell-command-to-string
-     (mapconcat
-      'identity
-      `("plutil"
-        ,(format "-%s" cmd) ;; ---------------------------------- cmd
-        ,(and key (format "'%s'" key)) ;; ----------------------- key
-        ,@(and type (cond (readp (list  ;; ---------------------- [read]
-                                  (format "%s" type) ;; --------- output format
-                                  "-o -"))  ;; ------------------ output path
-                          (t     (list ;; ----------------------- [write]
-                                  (format "-%s" type) ;; -------- input format
-                                  (format "'%s'" value))))) ;; -- input data
-        ,file) ;; ----------------------------------------------- file
-      " ")
-     )))
+    (let* (no-error
+           (command
+            (mapconcat
+             'identity
+             `("plutil"
+               ,(format "-%s" cmd) ;; ---------------------------------- cmd
+               ,(and key (format "'%s'" key)) ;; ----------------------- key
+               ,@(and type (cond (readp (list  ;; ---------------------- [read]
+                                         (format "%s" type) ;; --------- output format
+                                         "-o -"))  ;; ------------------ output path
+                                 (t     (list ;; ----------------------- [write]
+                                         (format "-%s" type) ;; -------- input format
+                                         (format "'%s'" value))))) ;; -- input data
+               ,file) ;; ----------------------------------------------- file
+             " "))
+           (output
+            (with-output-to-string
+              (with-current-buffer standard-output
+                (setq no-error (= 0 (call-process-shell-command command nil standard-output)))))))
+      (if no-error
+          output
+        (signal 'error (list (format "[plutil] shell command error: %s" output)))))))
 
 ;;; encode
 
