@@ -377,6 +377,17 @@ If ALISTP not nil, treat JSON as an alist."
         <integer>3</integer>
       </array>"))))
 
+(ert-deftest test-plutil-read-nothing ()
+  (let ((test-file
+         (-create-testfile
+          "<key>array0</key>
+           <array>
+             <integer>1</integer>
+             <integer>2</integer>
+             <integer>3</integer>
+           </array>")))
+    (should (equal nil (plutil-read test-file "array1" 'json)))))
+
 (ert-deftest test-plutil-read-array ()
   (let ((test-file
          (-create-testfile

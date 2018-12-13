@@ -303,7 +303,9 @@ Return no-nil if success."
 
 (defun plutil-read (file &optional key fmt)
   "Read value from FILE by KEY.
-If KEY nil, return all.
+Return value at key path, or nil if no value at key path or invalid key path.
+
+If KEY nil, read whole FILE.
 FMT specific ouput format, it can be 'json(default) or 'xml1.
 
 :FIXME
@@ -313,9 +315,20 @@ but sometimes it will return an error, E.g:
 
     $ plutil -convert json -o - ~/Library/Preferences/com.github.GitHub.plist
     /Users/$USER/Library/Preferences/com.github.GitHub.plist: invalid object in plist for destination format"
-  (if key
-      (plutil--execute file 'extract key (or fmt 'json))
-    (plutil--execute file 'convert nil (or fmt 'json))))
+  (condition-case err
+      (if key
+          (plutil--execute file 'extract key (or fmt 'json))
+        (plutil--execute file 'convert nil (or fmt 'json)))
+    (plutil-shell-command-error
+     (if (string= (cadr err)
+                  (concat
+                   (expand-file-name file)
+                   ": Could not extract value, error: No value at that key path or invalid key path: "
+                   key
+                   "\n"))
+         nil
+       err)
+     )))
 
 (provide 'plutil)
 
