@@ -113,6 +113,18 @@ If ALISTP not nil, treat JSON as an alist."
         (plutil-xml-encode '(:data "foobar"))
       (error err)))))
 
+(ert-deftest test-plutil-xml-encode-float-value ()
+  (should
+   (equal
+    "<real>1.23</real>"
+    (plutil-xml-encode '(:float 1.23))))
+  (should
+   (equal
+    '(plutil-invalid-float-value 123)
+    (condition-case err
+        (plutil-xml-encode '(:float 123))
+      (error err)))))
+
 ;; array
 
 (ert-deftest test-plutil-xml-encode-array-nested-0 ()
@@ -211,6 +223,8 @@ If ALISTP not nil, treat JSON as an alist."
         <string>foo</string>
         <string>bar</string>
         <date>2018-11-28T06:42:23Z</date>
+        <data>Zm9vYmFy</data>
+        <real>1.23</real>
         <dict>
           <key>qux</key>
           <integer>3</integer>
@@ -223,9 +237,11 @@ If ALISTP not nil, treat JSON as an alist."
        ("foo"
         "bar"
         (:date "2018-11-28T06:42:23Z")
+        (:data "Zm9vYmFy")
+        (:float 1.23)
         (:dict
          (("qux" 3)
-          ("outdated" (:bool "yes"))) )))))))
+          ("outdated" (:bool "yes"))))))))))
 
 ;;; decode
 
@@ -511,4 +527,4 @@ If ALISTP not nil, treat JSON as an alist."
     (should (plutil-delete test-file "dict0"))
     (should (equal "{\"array0\":[1,2,3]}" (plutil-read test-file nil 'json)))))
 
-;; test-plutil.el ends here
+;;; test-plutil.el ends here
