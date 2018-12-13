@@ -77,10 +77,10 @@ If ALISTP not nil, treat JSON as an alist."
   (should (equal "<false/>" (plutil-xml-encode '(:bool "NO"))))
   (should
    (equal
-    "[plutil] Invalid bool value 'OK'"
+    '(plutil-invalid-bool-value "OK")
     (condition-case err
         (plutil-xml-encode '(:bool "OK"))
-      (error (cadr err))))))
+      (error err)))))
 
 (ert-deftest test-plutil-xml-encode-date-value ()
   (should
@@ -96,10 +96,10 @@ If ALISTP not nil, treat JSON as an alist."
     (plutil-xml-encode '(:date "2018-11-28T06Z"))))
   (should
    (equal
-    "[plutil] Expected an ISO 8601 formatted string bug got '2018-11-28T'"
+    '(plutil-invalid-date-value "2018-11-28T")
     (condition-case err
         (plutil-xml-encode '(:date "2018-11-28T"))
-      (error (cadr err))))))
+      (error err)))))
 
 (ert-deftest test-plutil-xml-encode-data-value ()
   (should
@@ -108,10 +108,10 @@ If ALISTP not nil, treat JSON as an alist."
     (plutil-xml-encode '(:data "Zm9vYmFy"))))
   (should
    (equal
-    "[plutil] Expected a base64 string but got 'foobar'"
+    '(plutil-invalid-data-value "foobar")
     (condition-case err
         (plutil-xml-encode '(:data "foobar"))
-      (error (cadr err))))))
+      (error err)))))
 
 ;; array
 

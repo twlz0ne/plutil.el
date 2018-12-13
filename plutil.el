@@ -36,6 +36,15 @@
 (require 'json)
 (require 'timezone)
 
+(define-error 'plutil-error nil)
+(define-error 'plutil-shell-command-error "" 'plutil-error)
+(define-error 'plutil-unknown-command "Unknown command" 'plutil-error)
+(define-error 'plutil-unknown-type "Unknown type" 'plutil-error)
+(define-error 'plutil-invalid-bool-value "Invalid bool string" 'plutil-error)
+(define-error 'plutil-invalid-data-value "Invalid base64 string" 'plutil-error)
+(define-error 'plutil-invalid-date-value "Invalid ISO 8601 formatted string" 'plutil-error)
+(define-error 'plutil-invalid-float-value "Invalid float number" 'plutil-error)
+
 ;;; internal
 
 (defun plutil--execute (file cmd &optional key type value)
@@ -64,10 +73,10 @@ KEY        <key>[.(index|key)...]
 'json    | a JSON fragment, useful for inserting compound values"
   (let* ((readp (cond ((memq cmd '(convert extract)) t)
                       ((memq cmd '(insert replace remove)) nil)
-                      (t (signal (format "[plutil] Unknown command '%s'!" cmd))))))
+                      (t (signal 'plutil-unknown-command (list cmd))))))
     (unless (and (and readp (memq type '(json xml1)))
                  (and (not readp) (memq type '(bool integer float string data date xml json)))
-              (signal (format "[plutil] Unknown type '%s'!" type))))
+                 (signal 'plutil-unknown-type (list type))))
     (let* (no-error
            (command
             (mapconcat
@@ -89,7 +98,7 @@ KEY        <key>[.(index|key)...]
                 (setq no-error (= 0 (call-process-shell-command command nil standard-output)))))))
       (if no-error
           output
-        (signal 'error (list (format "[plutil] shell command error: %s" output)))))))
+        (signal 'plutil-shell-command-error (list output))))))
 
 ;;; encode
 
@@ -114,19 +123,19 @@ KEY        <key>[.(index|key)...]
                 (format "<true/>"))
                ((member (downcase val) '("no" "false"))
                 (format "<false/>"))
-               (t (signal 'error (list (format "[plutil] Invalid bool value '%s'" val))))))
+               (t (signal 'plutil-invalid-bool-value (list val)))))
              ((eq head :date)
               (let ((timev (timezone-parse-date val)))
                 (cond
                  ((elt (reverse (append timev nil)) 0)
                   (format "<date>%s</date>" val))
-                 (t (signal 'error (list (format "[plutil] Expected an ISO 8601 formatted string bug got '%s'" val)))))))
+                 (t (signal 'plutil-invalid-date-value (list val))))))
              ((eq head :data)
               (condition-case err
                   (progn
                     (base64-decode-string val)
                     (format "<data>%s</data>" val))
-                (error (signal 'error (list (format "[plutil] Expected a base64 string but got '%s'" val))))))
+                (error (signal 'plutil-invalid-data-value (list val)))))
              (t (let ((key (substring (symbol-name head) 1)))
                   (format "<%s>%s</%s>" key val key)))
              )))
@@ -134,7 +143,7 @@ KEY        <key>[.(index|key)...]
             (plutil-xml-encode rest)))))
      (t (cond ((stringp obj) (format "<string>%s</string>" obj))
               ((numberp obj) (format "<integer>%s</integer>" obj))
-              (t (signal (format "[plutil] Unknown type of value '%s'" obj))))))))
+              (t (signal 'plutil-error (list (format "Unknown type of value '%s'" obj)))))))))
 
 (defun plutil-xml-encode-dict (alist &optional nowrap)
   "Return a plist XML representation of ALIST.
@@ -173,7 +182,7 @@ Data nodes at `(nth 3 xml1obj)'."
                   (and (eq (nth 0 xml1obj) 'plist)
                        (equal (nth 1 xml1obj) '((version . "1.0")))
                        (string-match-p "\\`[\n\s\t]*\\'" (nth 2 xml1obj))))
-        (signal 'error (list (format "[plutil] Invalid plist xml1 string: %s" xml1str))))
+        (signal 'plutil-error (list (format "Invalid plist xml1 string: %s" xml1str))))
       xml1obj)))
 
 (defun plutil--xml1-purge (xml1nodes)
@@ -239,7 +248,7 @@ Data nodes at `(nth 3 xml1obj)'."
                                     (plutil--xml1-decode keynode)
                                     (plutil--xml1-decode valnode))))))))
                      dict)))
-            (t (signal 'error (list (format "[plutil] Invalid plist xml1 nodes: %s" rest))))))))
+            (t (signal 'plutil-error (list (format "Invalid plist xml1 nodes: %s" rest))))))))
 
 (defun plutil-xml1-purge (xml1str &optional noheader)
   "Purge XML1STR, remove header and blanks."
@@ -261,7 +270,7 @@ Data nodes at `(nth 3 xml1obj)'."
   "Create an empty apple plist FILE with optional xml INIT-DATA string.
 Return no-nil if success."
   (if (file-exists-p file)
-      (signal (format "File '%s' already exists!" file))
+      (signal 'plutil-error (list (format "File '%s' already exists!" file)))
     (with-temp-buffer
       (insert (concat "\
 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
