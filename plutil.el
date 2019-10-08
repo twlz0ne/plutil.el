@@ -77,7 +77,7 @@ KEY        <key>[.(index|key)...]
     (unless (and (and readp (memq type '(json xml1)))
                  (and (not readp) (memq type '(bool integer float string data date xml json)))
                  (signal 'plutil-unknown-type (list type))))
-    (let* (no-error
+    (let* (errcode
            (command
             (mapconcat
              'identity
@@ -95,8 +95,8 @@ KEY        <key>[.(index|key)...]
            (output
             (with-output-to-string
               (with-current-buffer standard-output
-                (setq no-error (= 0 (call-process-shell-command command nil standard-output)))))))
-      (if no-error
+                (setq errcode (call-process-shell-command command nil standard-output))))))
+      (if (zerop errcode)
           output
         (signal 'plutil-shell-command-error (list output))))))
 
@@ -177,7 +177,7 @@ If NOWRAP not nil, inhibit root wrapper <array></array>."
 
 (defun plutil--xml1-parse (xml1str &optional noheader)
   "Parse XML1STR.
-If NOHEADER no nil, skip header checking,
+If NOHEADER not nil, skip header checking,
 Data nodes at `(nth 3 xml1obj)'."
   (with-temp-buffer
     (insert xml1str)
